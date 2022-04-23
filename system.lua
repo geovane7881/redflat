@@ -78,9 +78,9 @@ function system.qemu_image_size(args)
 
 	-- Parse data
 	------------------------------------------------------------
-	local size, k = string.match(line, "disk%ssize:%s([%.%d]+)%s(%w)")
+	local size, k = string.match(line, "disk%ssize:%s([%.%d]+)(%w)")
 	img_info.size = q_format(size, k)
-	local vsize, vk = string.match(line, "virtual%ssize:%s([%.%d]+)%s(%w)")
+	local vsize, vk = string.match(line, "virtual%ssize:%s([%.%d]+)(%w)")
 	img_info.virtual_size = q_format(vsize, vk)
 	img_info.use_p = img_info.virtual_size > 0 and math.floor(img_info.size / img_info.virtual_size * 100) or 0
 
@@ -91,9 +91,6 @@ end
 
 -- Traffic check with vnstat (async)
 -----------------------------------------------------------------------------------------------------------------------
-local vnstat_pattern = "%s+(%d+,%d+)%s(%w+)%s+%|%s+(%d+,%d+)%s(%w+)%s+%|%s+(%d+,%d+)%s(%w+)%s+%|%s+.+"
-local vnstat_index = { rx = 1, tx = 3, total = 5 }
-
 local function vnstat_format(value, unit)
 	if not value or not unit then return 0 end
 	local v = value:gsub(',', '.')
@@ -103,25 +100,18 @@ local function vnstat_format(value, unit)
 	       or unit == "GiB" and v * 1024^3
 end
 
-local function vnstat_parse(output, traffic)
-	local statistic = { string.match(output, vnstat_pattern) }
-	local index = vnstat_index[traffic]
-	local x, u = statistic[index], statistic[index + 1]
-	local result = vnstat_format(x, u)
-	return result
-end
-
 function system.vnstat_check(args)
-	args = type(args) == "table" and args or {} -- backward capability
-	args.options = args.options or '-d'
-	args.traffic = args.traffic or 'total'
-
-	local command = string.format("vnstat %s | tail -n 3 | head -n 1", args.options)
+	local command = string.format("vnstat %s | tail -n 3 | head -n 1", args)
 	return function(setup)
-		awful.spawn.easy_async_with_shell(command, function(output)
-			local result = vnstat_parse(output, args.traffic)
-			setup({ result })
-		end)
+		awful.spawn.easy_async_with_shell(command,
+			function(output)
+				local x, u = string.match(
+					output, "%s+%d+,%d+%s%w+%s+%|%s+%d+,%d+%s%w+%s+%|%s+(%d+,%d+)%s(%w+)%s+%|%s+.+"
+				)
+				local total = vnstat_format(x, u)
+				setup({ total })
+			end
+		)
 	end
 end
 

@@ -23,10 +23,10 @@ local math = math
 local unpack = unpack or table.unpack
 
 local beautiful = require("beautiful")
+local tag = require("awful.tag")
 local awful = require("awful")
 local wibox = require("wibox")
 local timer = require("gears.timer")
-local geometry = require("gears.geometry")
 
 local basetask = require("redflat.gauge.tag.blue")
 local redutil = require("redflat.util")
@@ -66,32 +66,25 @@ local function default_style()
 		task_margin = { 5, 5, 0, 0 }
 	}
 	style.winmenu = {
-		icon                 = { unknown = redutil.base.placeholder(),
-		                         tag = redutil.base.placeholder({ txt = "■" }),
-		                         switch_screen = redutil.base.placeholder() },
-		micon                = { blank = redutil.base.placeholder({ txt = " " }),
-		                         check = redutil.base.placeholder({ txt = "+" }) },
-		layout_icon          = { unknown = redutil.base.placeholder() },
-		titleline            = { font = "Sans 16 bold", height = 35 },
-		stateline            = { height = 35 },
-		tagline              = { height = 30, spacing = 10, rows = 1 },
-		state_iconsize       = { width = 20, height = 20 },
-		tag_iconsize         = { width = 16, height = 16 },
-		separator            = { marginh = { 3, 3, 5, 5 } },
-		tagmenu              = { icon_margin = { 2, 2, 2, 2 } },
-		hide_action          = { min = true,
-		                         move = true,
-		                         max = false,
-		                         add = false,
-		                         floating = false,
-		                         sticky = false,
-		                         ontop = false,
-		                         below = false,
-		                         maximized = false },
-		enable_screen_switch = false,
-		enable_tagline       = false,
-		tagline_mod_key      = "Mod4",
-		color                = { main = "#b1222b", icon = "#a0a0a0", gray = "#404040" }
+		icon           = { unknown = redutil.base.placeholder() },
+		micon          = { blank = redutil.base.placeholder({ txt = " " }),
+		                   check = redutil.base.placeholder({ txt = "+" }) },
+		layout_icon    = { unknown = redutil.base.placeholder() },
+		titleline      = { font = "Sans 16 bold", height = 35 },
+		stateline      = { height = 35 },
+		state_iconsize = { width = 20, height = 20 },
+		separator      = { marginh = { 3, 3, 5, 5 } },
+		tagmenu        = { icon_margin = { 2, 2, 2, 2 } },
+		hide_action    = { min = true,
+		                   move = true,
+		                   max = false,
+		                   add = false,
+		                   floating = false,
+		                   sticky = false,
+		                   ontop = false,
+		                   below = false,
+		                   maximized = false },
+		color          = { main = "#b1222b", icon = "#a0a0a0", gray = "#404040" }
 	}
 	style.tasktip = {
 		border_width = 2,
@@ -242,69 +235,6 @@ local function state_line_construct(state_icons, setup_layout, style)
 	return stateboxes
 end
 
--- Function to construct menu line with tag switches (for style.enable_tagline)
------------------------------------------------------------------------------------
-local function tagline_construct(setup_layout, style)
-	local tagboxes = {}
-	setup_layout:reset()
-
-	-- calculate number of tag mark per line
-	local columns = math.ceil(#last.screen.tags / style.tagline.rows)
-	setup_layout.forced_num_cols = columns
-
-	-- setup tag marks
-	for i, t in ipairs(last.screen.tags) do
-		if not awful.tag.getproperty(t, "hide") then
-
-			tagboxes[i] = svgbox(style.icon.tag)
-			tagboxes[i]:set_forced_width(style.tag_iconsize.width)
-			tagboxes[i]:set_forced_height(style.tag_iconsize.height)
-
-			-- set widget in line
-			local l = wibox.layout.align.horizontal()
-			l:set_expand("outside")
-			l:set_second(tagboxes[i])
-			setup_layout:add(l)
-
-			-- set mouse action
-			tagboxes[i]:buttons(awful.util.table.join(
-				awful.button({}, 1,
-					function()
-						last.client:move_to_tag(t)
-						awful.layout.arrange(t.screen)
-						redtasklist.winmenu.hide_check("move")
-					end
-				),
-				awful.button({ style.tagline_mod_key }, 1,
-					function()
-						last.client:move_to_tag(t)
-						awful.layout.arrange(t.screen)
-						redtasklist.winmenu.hide_check("move")
-						t:view_only()
-					end
-				),
-				awful.button({}, 2,
-					function()
-						last.client:move_to_tag(t)
-						awful.layout.arrange(t.screen)
-						redtasklist.winmenu.hide_check("move")
-						t:view_only()
-					end
-				),
-				awful.button({}, 3,
-					function()
-						last.client:toggle_tag(t)
-						awful.layout.arrange(t.screen)
-						redtasklist.winmenu.hide_check("add")
-					end
-				)
-			))
-		end
-	end
-
-	return tagboxes
-end
-
 -- Calculate menu position
 -- !!! Bad code is here !!!
 -- !!! TODO: make variant when panel place on top of screen !!!
@@ -331,7 +261,7 @@ local function new_task(c_group, style)
 	task.group = c_group
 	task.l     = wibox.container.margin(task.widg, unpack(style.task_margin))
 
-	task.widg:connect_signal("mouse::enter", function(_, geo) redtasklist.tasktip:show(task.group, geo) end)
+	task.widg:connect_signal("mouse::enter", function() redtasklist.tasktip:show(task.group) end)
 	task.widg:connect_signal("mouse::leave",
 		function()
 			redtasklist.tasktip.hidetimer:start()
@@ -539,7 +469,7 @@ local function construct_tasktip(c_group, layout, data, buttons, style)
 
 	-- return tasktip size
 	return {
-		width  = tip_width + style.margin[1] + style.margin[2] + 2,
+		width  = tip_width + style.margin[1] + style.margin[2],
 		height = #c_group * (tb_h + style.margin[3] + style.margin[4])
 	}
 end
@@ -558,7 +488,6 @@ function redtasklist.winmenu:init(style)
 	local close    = function() last.client:kill(); self.menu:hide() end
 	local minimize = function() last.client.minimized = not last.client.minimized; self.hide_check("min") end
 	-- local maximize = function() last.client.maximized = not last.client.maximized; self.hide_check("max")end
-	local switchscreen = function() redutil.placement.next_screen(last.client); self.menu:hide() end
 
 	-- Create array of state icons
 	-- associate every icon with action and state indicator
@@ -630,47 +559,21 @@ function redtasklist.winmenu:init(style)
 	local movemenu_items = tagmenu_items(self.movemenu_action, style)
 	local addmenu_items = tagmenu_items(self.addmenu_action, style)
 
-	local menu_items = {
-		{ widget = classline },
-		menusep,
-		{ "Minimize",    minimize, nil, style.icon.minimize or style.icon.unknown },
-		{ "Close",       close,    nil, style.icon.close or style.icon.unknown },
-		menusep,
-		{ widget = stateline, focus = true }
-	}
-
-	if style.enable_tagline then
-		-- Construct visual tag representations in a menu line
-		self.tagline_container = wibox.layout.grid()
-		self.tagline_container.forced_num_rows = style.tagline.rows
-		self.tagline_container.spacing = style.tagline.spacing
-		self.tagline_container.expand = true
-
-		local tagline_vertical = wibox.layout.align.vertical()
-		tagline_vertical:set_second(self.tagline_container)
-		tagline_vertical:set_expand("outside")
-
-		self.tagboxes = tagline_construct(self.tagline_container, style)
-		local tagline = wibox.container.constraint(tagline_vertical, "exact", nil, style.tagline.height)
-		table.insert(menu_items, 3, menusep)
-		table.insert(menu_items, 3, { widget = tagline })
-	else
-		table.insert(menu_items, 3, { "Add to tag",  { items = addmenu_items,  theme = style.tagmenu } })
-		table.insert(menu_items, 3, { "Move to tag", { items = movemenu_items, theme = style.tagmenu } })
-	end
-
-	-- inject switch screen action into menu if applicable
-	if style.enable_screen_switch and screen.count() > 1 then
-		local action = { "Switch screen", switchscreen, nil, style.icon.switch_screen or style.icon.unknown }
-		if style.enable_tagline then table.insert(menu_items, 3, menusep) end
-		table.insert(menu_items, 3, action)
-	end
-
 	-- Create menu
 	------------------------------------------------------------
 	self.menu = redmenu({
 		theme = style.menu,
-		items = menu_items,
+		items = {
+			{ widget = classline },
+			menusep,
+			{ "Move to tag", { items = movemenu_items, theme = style.tagmenu } },
+			{ "Add to tag",  { items = addmenu_items,  theme = style.tagmenu } },
+
+			{ "Minimize",    minimize, nil, style.icon.minimize or style.icon.unknown },
+			{ "Close",       close,    nil, style.icon.close or style.icon.unknown },
+			menusep,
+			{ widget = stateline, focus = true }
+		}
 	})
 
 	-- Widget update functions
@@ -679,11 +582,7 @@ function redtasklist.winmenu:init(style)
 		if self.menu.wibox.visible then
 			classbox:set_text(c.class or "Undefined")
 			stateboxes_update(c, state_icons, stateboxes)
-			if style.enable_tagline then
-				self:tagline_update(c, style)
-			else
-				tagmenu_update(c, self.menu, style.enable_screen_switch and { 2, 3 } or { 1, 2 }, style)
-			end
+			tagmenu_update(c, self.menu, { 1, 2 }, style)
 		end
 	end
 
@@ -696,33 +595,6 @@ function redtasklist.winmenu:init(style)
 	}
 	for _, sg in ipairs(client_signals) do
 		client.connect_signal(sg, function() self:update(last.client) end)
-	end
-end
-
--- Function to rebuild the tag line entirely if screen and tags have changed
---------------------------------------------------------------------------------
-function redtasklist.winmenu:tagline_rebuild(style)
-	self.tagboxes = tagline_construct(self.tagline_container, style)
-end
-
--- Function to update the tag line's icon states
---------------------------------------------------------------------------------
-function redtasklist.winmenu:tagline_update(c, style)
-	if last.tag_screen ~= mouse.screen then
-		self:tagline_rebuild(style)
-		last.tag_screen = mouse.screen
-	end
-	for k, t in ipairs(last.screen.tags) do
-		if not awful.tag.getproperty(t, "hide") then
-
-			local icon_color = style.color.gray
-			if c then
-				local client_tags = c:tags()
-				icon_color = awful.util.table.hasitem(client_tags, t) and style.color.main or icon_color
-			end
-
-			self.tagboxes[k]:set_color(icon_color)
-		end
 	end
 end
 
@@ -806,18 +678,11 @@ function redtasklist.tasktip:init(buttons, style)
 			if not redtasklist.winmenu.menu.hidetimer.started then redtasklist.winmenu.menu.hidetimer:start() end
 		end
 	)
-
-	-- hide tasktip if tag changes
-	tag.connect_signal("property::selected",
-		function()
-			self.hidetimer:emit_signal("timeout")
-		end
-	)
 end
 
 -- Show tasktip
 -----------------------------------------------------------------------------------------------------------------------
-function redtasklist.tasktip:show(c_group, parent_geo)
+function redtasklist.tasktip:show(c_group)
 
 	if self.hidetimer.started then self.hidetimer:stop() end
 
@@ -825,13 +690,7 @@ function redtasklist.tasktip:show(c_group, parent_geo)
 		self.wibox.visible = true
 		last.group = c_group
 		self:update(c_group)
-		awful.placement.next_to(self.wibox,
-		    {
-		        preferred_positions = {'top'},
-		        preferred_anchors   = {'middle'},
-		        geometry            = parent_geo,
-		    }
-		)
+		awful.placement.under_mouse(self.wibox)
 		awful.placement.no_offscreen(self.wibox)
 	end
 end
@@ -895,11 +754,9 @@ function redtasklist.new(args, style)
 	local tag_signals = { "property::selected", "property::activated" }
 
 	-- for _, sg in ipairs(client_signals) do client.connect_signal(sg, update) end
-	-- for _, sg in ipairs(tag_signals)    do awful.tag.attached_connect_signal(cs, sg, update) end
+	-- for _, sg in ipairs(tag_signals)    do tag.attached_connect_signal(cs, sg, update) end
 	for _, sg in ipairs(client_signals) do client.connect_signal(sg, function() tasklist.queue:again() end) end
-	for _, sg in ipairs(tag_signals) do
-		awful.tag.attached_connect_signal(cs, sg, function() tasklist.queue:again() end)
-	end
+	for _, sg in ipairs(tag_signals) do tag.attached_connect_signal(cs, sg, function() tasklist.queue:again() end) end
 
 	-- force hide pop-up widgets if any client was closed
 	-- because last vars may be no actual anymore
@@ -923,44 +780,12 @@ end
 -- Mouse action functions
 -----------------------------------------------------------------------------------------------------------------------
 
--- checks whether the given client is visually occluded by any other window
-local function client_is_occluded(c)
-	local first = true
-	local geo = c:geometry()
-
-	for _, c2 in ipairs(client.get(c.screen, true)) do
-		if first then
-			-- if we are already at the top of the stack we are also visibly at the top naturally
-			if c2 == c then return false end
-			first = false
-		else
-			-- if we haven't hit any intersection and reach the client c, we are still visibly at the top
-			if c2 == c then return false end
-		end
-		if c2:isvisible() and geometry.rectangle.area_intersect_area(geo, c2:geometry()) then
-			-- any intersection on the way down the stack means we are visibly occluded by another client
-			return true
-		end
-	end
-	return false
-end
-
 -- focus/minimize
 function redtasklist.action.select(args)
 	args = args or {}
 	local state = get_state(args.group)
 
 	if state.focus then
-		-- if only a single client is selected
-		if args.group[2] == nil then
-			local c = args.group[1]
-			-- if it is not at top position in z-order,
-			-- raise it instead of minimizing it
-			if client_is_occluded(c) then
-				c:raise()
-				return
-			end
-		end
 		for _, c in ipairs(args.group) do c.minimized = true end
 	else
 		if state.minimized then

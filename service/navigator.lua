@@ -43,8 +43,7 @@ local function default_style()
 		color        = { border = "#575757", wibox = "#00000000", bg1 = "#57575740", bg2 = "#57575720",
 		                 fbg1 = "#b1222b40", fbg2 = "#b1222b20", mark = "#575757", text = "#202020",
 		                 hbg1 = "#32882d40", hbg2 = "#32882d20" },
-		shape        = nil,
-		window_type  = nil,
+		shape        = nil
 	}
 	return redutil.table.merge(style, redutil.table.check(beautiful, "service.navigator") or {})
 end
@@ -169,8 +168,7 @@ function navigator.make_decor(c)
 		bg           = style.color.wibox,
 		border_width = style.border_width,
 		border_color = style.color.border,
-		shape        = style.shape,
-		type         = style.window_type,
+		shape        = style.shape
 	})
 
 	object.client = c
@@ -277,7 +275,7 @@ function navigator:run()
 	end
 
 	-- check handler
-	local l = awful.layout.get(s)
+	local l = awful.layout.get(client.focus.screen)
 	local handler = l.key_handler or redflat.layout.common.handler[l]
 	if not handler then
 		rednotify:show(redutil.table.merge({ text = "Layout not supported" }, self.style.notify))

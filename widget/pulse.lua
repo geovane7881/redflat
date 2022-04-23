@@ -74,10 +74,10 @@ function pulse:change_volume(args)
 	local parsed = string.match(v, "0x%x+")
 
 	-- catch possible problems with pacmd output
-	if not parsed then
-		naughty.notify({ title = "Warning!", text = "PA widget can't parse pacmd output" })
-		return
-	end
+	-- if not parsed then
+	-- 	naughty.notify({ title = "Warning!", text = "PA widget can't parse pacmd output" })
+	-- 	return
+	-- end
 
 	local volume = tonumber(parsed)
 
@@ -107,8 +107,8 @@ end
 
 -- Set mute
 -----------------------------------------------------------------------------------------------------------------------
-function pulse:mute()
-	--args = args or {}
+function pulse:mute(args)
+	args = args or {}
 	if not self._type or not self._sink then return end
 
 	local mute = redutil.read.output(string.format("pacmd dump | grep 'set-%s-mute %s'", self._type, self._sink))
@@ -126,9 +126,6 @@ end
 -----------------------------------------------------------------------------------------------------------------------
 function pulse:update_volume(args)
 	args = args or {}
-	if args.sink_update then
-		self._sink = get_default_sink({ type = self._type })
-	end
 	if not self._type or not self._sink then return end
 
 	-- initialize vars
@@ -184,7 +181,7 @@ function pulse.new(args, style)
 	--------------------------------------------------------------------------------
 	if autoupdate then
 		local t = gears.timer({ timeout = timeout })
-		t:connect_signal("timeout", function() widg:update_volume({ sink_update = true }) end)
+		t:connect_signal("timeout", function() widg:update_volume() end)
 		t:start()
 	end
 

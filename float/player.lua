@@ -43,21 +43,6 @@ local dbus_set = dbus_mpris
 local dbus_action = dbus_mpris
                     .. "org.mpris.MediaPlayer2.Player."
 
--- Hotfix for https://github.com/awesomeWM/awesome/issues/2985
------------------------------------------------------------------------------------------------------------------------
-local function mouse_get_current_widget_geometry()
-	local w = mouse.current_wibox
-	if w then
-		local geo, coords = w:geometry(), mouse:coords()
-		local bw = w.border_width
-
-		local list = w:find_widgets(coords.x - geo.x - bw, coords.y - geo.y - bw)
-
-		-- return the geometry of the topmost widget
-		return list[#list]
-	end
-end
-
 -- Helper function to decode URI string format
 -----------------------------------------------------------------------------------------------------------------------
 local function decodeURI(s)
@@ -109,7 +94,10 @@ function player:init(args)
 	-- Initialize vars
 	--------------------------------------------------------------------------------
 	args = args or {}
-	local _player = args.name or "vlc"
+	-- local _player = args.name or "vlc"
+  -- current player
+  local _player = redutil.read.output('playerctl --list-all --format "{{ playerName }}" | head -n 1')
+  _player = _player:match'^%s*(.*%S)' or ''
 	local style = default_style()
 	local show_album = false
 
@@ -190,9 +178,7 @@ function player:init(args)
 	align_vertical:set_middle(wibox.container.margin(control_align, unpack(style.controls_margin)))
 	align_vertical:set_bottom(wibox.container.constraint(self.bar, "exact", nil, style.bar_width))
 	local area = wibox.layout.fixed.horizontal()
-	local cover_area = wibox.container.place(self.box.image)
-	cover_area.forced_width = style.geometry.height - style.border_margin[3] - style.border_margin[4]
-	area:add(cover_area)
+	area:add(self.box.image)
 	area:add(wibox.container.margin(align_vertical, unpack(style.elements_margin)))
 
 	-- Buttons
@@ -214,7 +200,7 @@ function player:init(args)
 		awful.button(
 			{}, 1, function()
 				local coords = {
-					bar   = mouse_get_current_widget_geometry(),
+					bar   = mouse.current_widget_geometry,
 					wibox = mouse.current_wibox:geometry(),
 					mouse = mouse.coords(),
 				}
@@ -272,7 +258,6 @@ function player:init(args)
 	self.clear_info = function(is_att)
 		self.box.image:set_image(style.icon.cover)
 		self.box.image:set_color(is_att and style.color.main or style.color.gray)
-		self.box.image:emit_signal("widget::layout_changed")
 
 		self.box.time:set_text("0:00")
 		self.bar:set_value(0)
@@ -374,6 +359,13 @@ function player:action(args)
 	if not awful.util.table.hasitem(self._actions, args) then return end
 	if not self.wibox then self:init() end
 
+  print("action: ")
+  print(tostring(self.command.action))
+  print("args")
+  print(tostring(args))
+  print("final")
+  print(self.command.action .. args)
+
 	awful.spawn.with_shell(self.command.action .. args)
 	self:update()
 end
@@ -444,14 +436,12 @@ function player:update_from_metadata(data)
 			if image then
 				self.box.image:set_color(nil)
 				has_cover = self.box.image:set_image(decodeURI(image))
-				self.box.image:emit_signal("widget::layout_changed")
 			end
 		end
 		if not has_cover then
 			-- reset to generic icon if no cover available
 			self.box.image:set_color(self.style.color.gray)
 			self.box.image:set_image(self.style.icon.cover)
-			self.box.image:emit_signal("widget::layout_changed")
 		end
 
 		-- track length

@@ -28,6 +28,8 @@ local svgbox = require("redflat.gauge.svgbox")
 local titlebar = { mt = {}, widget = {}, _index = 1, _num = 1 }
 titlebar.list = setmetatable({}, { __mode = 'k' })
 
+local env = require("colorless.env-config") -- load file with environment
+local beautiful = require("beautiful")
 
 -- Generate default theme vars
 -----------------------------------------------------------------------------------------------------------------------
@@ -274,6 +276,18 @@ end
 function titlebar.global_switch(index)
 	titlebar._index = index or titlebar._index + 1
 	if titlebar._index > titlebar._num then titlebar._index = 1 end
+
+    --coloca borda se necessário
+	if titlebar._index == 1 then
+      -- client.connect_signal("focus",   function(c) c.border_color = beautiful.border_normal end)
+      -- client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+      client.connect_signal("focus",   function(c) c.border_color = beautiful.border_focus end)
+      client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+    else
+        client.connect_signal("focus", function(c) c.border_color = beautiful.border_normal end)
+        client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+    end
+
 
 	for _, c in pairs(titlebar.get_clients()) do
 		for _, position in ipairs(positions) do

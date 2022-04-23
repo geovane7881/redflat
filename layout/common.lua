@@ -25,7 +25,7 @@ common.wfactstep = 0.05
 -- default keys
 common.keys.base = {
 	{
-		{ "Mod4" }, "c", function() common.action.kill() end,
+		{ "Mod4" }, "q", function() common.action.kill() end,
 		{ description = "Kill application", group = "Action" }
 	},
 	{
@@ -47,22 +47,38 @@ common.keys.base = {
 }
 
 common.keys.swap = {
-	{
-		{ "Mod4" }, "Up", function() awful.client.swap.bydirection("up") end,
-		{ description = "Move application up", group = "Movement" }
-	},
-	{
-		{ "Mod4" }, "Down", function() awful.client.swap.bydirection("down") end,
-		{ description = "Move application down", group = "Movement" }
-	},
-	{
-		{ "Mod4" }, "Left", function() awful.client.swap.bydirection("left") end,
-		{ description = "Move application left", group = "Movement" }
-	},
-	{
-		{ "Mod4" }, "Right", function() awful.client.swap.bydirection("right") end,
-		{ description = "Move application right", group = "Movement" }
-	},
+        --{
+        --    { "Mod4" }, "Up", function() awful.client.swap.bydirection("up") end,
+        --    { description = "Move application up", group = "Movement" }
+        --},
+        --{
+        --    { "Mod4" }, "Down", function() awful.client.swap.bydirection("down") end,
+        --    { description = "Move application down", group = "Movement" }
+        --},
+        --{
+        --    { "Mod4" }, "Left", function() awful.client.swap.bydirection("left") end,
+        --    { description = "Move application left", group = "Movement" }
+        --},
+        --{
+        --    { "Mod4" }, "Right", function() awful.client.swap.bydirection("right") end,
+        --    { description = "Move application right", group = "Movement" }
+        --},
+        {
+            { "Mod4" }, "k", function() awful.client.swap.bydirection("up") end,
+            { description = "Move application up", group = "Movement" }
+        },
+        {
+            { "Mod4" }, "j", function() awful.client.swap.bydirection("down") end,
+            { description = "Move application down", group = "Movement" }
+        },
+        {
+            { "Mod4" }, "h", function() awful.client.swap.bydirection("left") end,
+            { description = "Move application left", group = "Movement" }
+        },
+        {
+            { "Mod4" }, "l", function() awful.client.swap.bydirection("right") end,
+            { description = "Move application right", group = "Movement" }
+        },
 }
 
 common.keys.tile = {

@@ -101,7 +101,6 @@ function minitray:update_geometry()
 	end
 
 	redutil.placement.no_offscreen(self.wibox, self.screen_gap, mouse.screen.workarea)
-	self.tray.screen = self.wibox.screen
 end
 
 -- Show

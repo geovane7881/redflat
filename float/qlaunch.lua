@@ -56,10 +56,6 @@ qlaunch.keys.action = {
 		{ description = "Reload config from disk", group = "Action" }
 	},
 	{
-		{}, "w", function() qlaunch:save_config() end,
-		{ description = "Save config to disk", group = "Action" }
-	},
-	{
 		{ "Mod4" }, "F1", function() redtip:show() end,
 		{ description = "Show hotkeys helper", group = "Action" }
 	},
@@ -114,7 +110,7 @@ end
 local function get_clients(app)
 	local clients = {}
 	for _, c in ipairs(client.get()) do
-		if c.class and c.class:lower() == app then table.insert(clients, c) end
+		if c.class:lower() == app then table.insert(clients, c) end
 	end
 	return clients
 end
@@ -286,10 +282,6 @@ local function build_switcher(keys, style)
 		self.selected = nil
 		for key, data in pairs(store) do
 			local icon = data.app == "" and style.no_icon or idb[data.app] or style.df_icon
-			-- force manually set icon
-			if data.icon ~= "" then
-				icon = redflat.service.dfparser.lookup_icon(data.icon, style)
-			end
 			self.items[key].svgbox:set_image(icon)
 			if style.recoloring then self.items[key].svgbox:set_color(style.color.icon) end
 		end
@@ -449,11 +441,11 @@ function qlaunch:set_new_app(key, c)
 
 	if c then
 		local run_command = redutil.read.output(string.format("tr '\\0' ' ' < /proc/%s/cmdline", c.pid))
-		self.store[key] = { app = c.class:lower(), run = run_command, icon = "" }
+		self.store[key] = { app = c.class:lower(), run = run_command }
 		local note = redutil.table.merge({text = string.format("%s binded with '%s'", c.class, key)}, self.style.notify)
 		redflat.float.notify:show(note)
 	else
-		self.store[key] = { app = "", run = "", icon = "" }
+		self.store[key] = { app = "", run = "" }
 		local note = redutil.table.merge({text = string.format("'%s' key unbinded", key)}, self.style.notify)
 		redflat.float.notify:show(note)
 	end
@@ -479,14 +471,8 @@ end
 function qlaunch:load_config(need_reset)
 	if is_file_exists(self.style.configfile) then
 		for line in io.lines(self.style.configfile) do
-			-- do not crash when icon= is not present
-			if string.find(line, "icon=.*;") then
-				local key, app, run, icon = string.match(line, "key=(.+);app=(.*);run=(.*);icon=(.*);")
-				self.store[key] = { app = app, run = run, icon = icon }
-			else
-				local key, app, run = string.match(line, "key=(.*);app=(.*);run=(.*);")
-				self.store[key] = { app = app, run = run, icon = "" }
-			end
+			local key, app, run = string.match(line, "key=(.+);app=(.*);run=(.*);")
+			self.store[key] = { app = app, run = run }
 		end
 	else
 		self.store = self.default_switcher_keys
@@ -501,7 +487,7 @@ end
 function qlaunch:save_config()
 	local file = io.open(self.style.configfile, "w+")
 	for key, data in pairs(self.store) do
-		file:write(string.format("key=%s;app=%s;run=%s;icon=%s;\n", key, data.app, data.run, data.icon))
+		file:write(string.format("key=%s;app=%s;run=%s;\n", key, data.app, data.run))
 	end
 	file:close()
 end

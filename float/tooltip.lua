@@ -30,7 +30,6 @@ local tooltip = { mt = {} }
 local function default_style()
 	local style = {
 		padding      = { vertical = 3, horizontal = 5 },
-		margin       = 0,
 		timeout      = 1,
 		font  = "Sans 12",
 		border_width = 2,
@@ -97,7 +96,7 @@ function tooltip.new(args, style)
 			else
 				awful.placement.under_mouse(ttp.wibox)
 			end
-			awful.placement.no_offscreen(ttp.wibox, { margins = style.margin })
+			awful.placement.no_offscreen(ttp.wibox)
 			ttp.wibox.visible = true
 			show_timer:stop()
 		end)
@@ -121,7 +120,7 @@ function tooltip.new(args, style)
 			if self.wibox.visible then
 				self:set_geometry()
 				self.wibox.x = mouse.coords().x - self.wibox.width / 2
-				awful.placement.no_offscreen(self.wibox, { margins = style.margin })
+				awful.placement.no_offscreen(self.wibox)
 			end
 		end
 	end

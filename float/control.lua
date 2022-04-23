@@ -62,11 +62,11 @@ control.keys.control = {
 		{ description = "Put window at the center", group = "Window control" }
 	},
 	{
-		{ "Mod4" }, "q", function() control:resize() end,
+		{ "Mod4", "Shift" }, "k", function() control:resize() end,
 		{ description = "Increase window size", group = "Window control" }
 	},
 	{
-		{ "Mod4" }, "a", function() control:resize(true) end,
+		{ "Mod4", "Shift" }, "j", function() control:resize(true) end,
 		{ description = "Decrease window size", group = "Window control" }
 	},
 	{
@@ -74,15 +74,15 @@ control.keys.control = {
 		{ description = "Move window to right", group = "Window control" }
 	},
 	{
-		{ "Mod4" }, "j", function() control:move("left") end,
+		{ "Mod4" }, "h", function() control:move("left") end,
 		{ description = "Move window to left", group = "Window control" }
 	},
 	{
-		{ "Mod4" }, "k", function() control:move("bottom") end,
+		{ "Mod4" }, "j", function() control:move("bottom") end,
 		{ description = "Move window to bottom", group = "Window control" }
 	},
 	{
-		{ "Mod4" }, "i", function() control:move("top") end,
+		{ "Mod4" }, "k", function() control:move("top") end,
 		{ description = "Move window to top", group = "Window control" }
 	},
 	{

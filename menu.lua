@@ -54,7 +54,6 @@ local function default_theme()
 		height       = 20,
 		width        = 200,
 		font         = "Sans 12",
-		margin       = { 0, 0, 0, 0},  -- whole menu margin
 		icon_margin  = { 0, 0, 0, 0 }, -- left icon margin
 		ricon_margin = { 0, 0, 0, 0 }, -- right icon margin
 		nohide       = false,
@@ -295,7 +294,7 @@ function menu:item_leave(num)
 
 	if item then
 		item._background:set_fg(item.theme.color.text)
-		item._background:set_bg("transparent")
+		item._background:set_bg(item.theme.color.wibox)
 		if item.icon and item.theme.color.left_icon then item.icon:set_color(item.theme.color.left_icon) end
 		if item.right_icon then
 			if item.child and item.theme.color.submenu_icon then
@@ -457,7 +456,7 @@ function menu:add(args)
 	item.theme = item.theme or theme
 	item._background = wibox.container.background(item.widget)
 	item._background:set_fg(item.theme.color.text)
-	item._background:set_bg("transparent")
+	item._background:set_bg(item.theme.color.wibox)
 
 	-- Add item widget to menu layout
 	------------------------------------------------------------
@@ -468,19 +467,12 @@ function menu:add(args)
 	------------------------------------------------------------
 	local num = #self.items
 
-	local press_action = function()
-		self:item_enter(num)
-		self:exec(num)
-	end
-	local release_action
-
-	if theme.action_on_release then
-		release_action, press_action = press_action, release_action --luacheck: ignore 321
-	end
-
 	item._background:buttons(awful.util.table.join(
 		awful.button({}, 3, function () self:hide() end),
-		awful.button({}, 1, press_action, release_action)
+		awful.button({}, 1, function ()
+			self:item_enter(num)
+			self:exec(num)
+		end)
 	))
 
 	item.widget:connect_signal("mouse::enter", function() self:item_enter(num, { hover = true }) end)
@@ -645,13 +637,11 @@ function menu.new(args, parent)
 	})
 
 	_menu.wibox.visible = false
-	_menu.wibox:set_widget(wibox.container.margin(_menu.layout, unpack(_menu.theme.margin)))
+	_menu.wibox:set_widget(_menu.layout)
 
 	-- set size
 	_menu.wibox.width = _menu.theme.width
-	-- we need to account for top and bottom margins so that the last element doesn't get squished
-	local total_height = _menu.add_size + _menu.theme.margin[3] + _menu.theme.margin[4]
-	_menu.wibox.height = total_height > 0 and total_height or 1
+	_menu.wibox.height = _menu.add_size > 0 and _menu.add_size or 1
 
 	-- Set menu autohide timer
 	------------------------------------------------------------

@@ -94,7 +94,7 @@ end
 --------------------------------------------------------------------------------
 local function construct_item(style)
 	local item = {
-		icon    = svgbox(),
+		icon    = wibox.widget.imagebox(),
 		name    = wibox.widget.textbox(),
 		comment = wibox.widget.textbox(),
 		bg      = style.color.bg,
